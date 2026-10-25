@@ -91,7 +91,12 @@ EOF
   echo "✅ KV id saved to wrangler.toml"
 fi
 
-# ---- Seed D1 + KV from data/events.json ----
+# ---- Rebuild public/ from source ----
+echo "📁 Syncing public/…"
+mkdir -p public
+cp index.html admin.html public/
+rm -rf public/assets public/data
+cp -r assets data public/
 echo "🌱 Seeding data…"
 python3 <<'EOF'
 import json
@@ -127,7 +132,7 @@ echo "   1) Push this folder to GitHub → Cloudflare Pages → Connect → outp
 echo "   2) Open /admin.html on your Pages URL for the parser (paste markdown → download JSON)."
 echo "   3) Board auto-sorts: upcoming on top, expired sinks with a stamp."
 echo ""
-WORKER_URL=$(wrangler deployments list 2>/dev/null | grep -oE 'https://[a-z0-9.-]+\.workers\.dev' | head -1)
+WORKER_URL=$(wrangler deployments list 2>/dev/null | grep -oE 'https://[a-z0-9.-]+\.workers\.dev' | head -1 || true)
 WORKER_URL="${WORKER_URL:-https://hackathon-scout.samimirn20.workers.dev}"
 REPO_URL=$(git remote get-url origin 2>/dev/null | sed -e 's/\.git$//' -e 's|git@github.com:|https://github.com/|' || true)
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
