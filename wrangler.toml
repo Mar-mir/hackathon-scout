@@ -21,3 +21,4 @@ crons = ["0 6 * * *"]  # daily 06:00 UTC refresh; use "0 6 * * 1" for weekly Mon
 [assets]
 directory = "./public"
 binding = "ASSETS"
+run_worker_first = true
