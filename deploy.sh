@@ -122,6 +122,20 @@ if [ -n "${KV_ID:-}" ]; then
   wrangler kv key put events --namespace-id="$KV_ID" --path=/tmp/scout-kv.json || true
 fi
 
+# ---- Admin password (random per deployer, never in repo) ----
+if [ ! -f .admin-password ]; then
+  echo "🔑 Generating random admin password…"
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -base64 18 | tr -d '\n' > .admin-password
+  else
+    python3 -c "import secrets; open('.admin-password','w').write(secrets.token_urlsafe(18))"
+  fi
+  chmod 600 .admin-password
+fi
+echo "🔑 Setting ADMIN_PASSWORD secret…"
+wrangler secret put ADMIN_PASSWORD < .admin-password > /dev/null
+echo "✅ Admin password set (saved in .admin-password, git-ignored)."
+
 # ---- Deploy worker ----
 echo "🚀 Deploying worker…"
 wrangler deploy
@@ -141,5 +155,11 @@ echo "🛠️  Admin:  ${WORKER_URL%/}/admin"
 echo "📡 API:    ${WORKER_URL%/}/api/events"
 if [ -n "${REPO_URL:-}" ]; then
 echo "📦 Repo:   $REPO_URL"
+fi
+ADMIN_PASS=$(cat .admin-password 2>/dev/null || true)
+if [ -n "${ADMIN_PASS:-}" ]; then
+echo "🔑 Admin user: admin"
+echo "🔑 Admin pass: $ADMIN_PASS"
+echo "   (also saved in .admin-password — keep it secret)"
 fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

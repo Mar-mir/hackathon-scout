@@ -1,13 +1,26 @@
 /* Cloudflare Worker — Hackathon Scout API + cron refresh.
    Routes:
-     GET  /api/events  → all events (from D1, fallback KV, fallback static)
-     POST /api/events  → replace events (protect with Cloudflare Access in production)
+     GET  /api/events  → public (from D1, fallback KV, fallback static)
+     POST /api/events  → 🔒 admin only (HTTP Basic, user "admin")
+     /admin, /admin.html → 🔒 admin only (HTTP Basic, user "admin")
+   Password comes from the ADMIN_PASSWORD worker secret (set by deploy.sh,
+   random per deployer). If the secret is missing, admin routes return 401.
    Cron: refresh timestamps / re-sort daily (wire your scout fetch here).
 */
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/events" && request.method === "GET") {
+    const path = url.pathname;
+
+    // 🔒 Admin surface: /admin, /admin.html, POST /api/events
+    const isAdminPage = path === "/admin" || path === "/admin.html";
+    const isWriteAPI = path === "/api/events" && request.method === "POST";
+    if (isAdminPage || isWriteAPI) {
+      const deny = checkAdmin(request, env);
+      if (deny) return deny;
+    }
+
+    if (path === "/api/events" && request.method === "GET") {
       try {
         if (env.DB) {
           const { results } = await env.DB.prepare("SELECT * FROM events ORDER BY deadline ASC").all();
@@ -23,7 +36,7 @@ export default {
       return Response.redirect(new URL("/data/events.json", url.origin), 307);
     }
     if (url.pathname === "/api/events" && request.method === "POST") {
-      // NOTE: put this route behind Cloudflare Access (see README-DEPLOY.md).
+      // Admin already verified above by checkAdmin.
       let body;
       try { body = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
       const events = Array.isArray(body) ? body : body.events;
@@ -70,4 +83,38 @@ function rowToEvent(r) {
 }
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
+}
+
+/* 🔒 HTTP Basic gate for the admin surface. User is always "admin",
+   password is the ADMIN_PASSWORD worker secret (random per deploy). */
+function checkAdmin(request, env) {
+  const secret = (env.ADMIN_PASSWORD || "").trim();
+  if (!secret) {
+    return new Response("Admin locked: set ADMIN_PASSWORD secret (see README).", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Hackathon Scout Admin"' },
+    });
+  }
+  const hdr = request.headers.get("Authorization") || "";
+  const m = hdr.match(/^Basic\s+(.+)$/i);
+  if (m) {
+    try {
+      const decoded = atob(m[1]);
+      const idx = decoded.indexOf(":");
+      const user = idx === -1 ? decoded : decoded.slice(0, idx);
+      const pass = idx === -1 ? "" : decoded.slice(idx + 1);
+      if (user === "admin" && timingSafeEqual(pass, secret)) return null;
+    } catch { /* fall through to 401 */ }
+  }
+  return new Response("Admin only.", {
+    status: 401,
+    headers: { "WWW-Authenticate": 'Basic realm="Hackathon Scout Admin"' },
+  });
+}
+
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
