@@ -5,8 +5,8 @@
 ## 🌐 Site addresses
 
 - **Board (public):** https://hackathon-scout.samimirn20.workers.dev/
-- **Admin + smart parser:** https://hackathon-scout.samimirn20.workers.dev/admin
-- **API (JSON):** https://hackathon-scout.samimirn20.workers.dev/api/events
+- **Admin + smart parser:** https://hackathon-scout.samimirn20.workers.dev/admin (🔒 user `admin` + random password)
+- **API (JSON):** https://hackathon-scout.samimirn20.workers.dev/api/events (GET public, POST 🔒)
 
 ## What is live
 
