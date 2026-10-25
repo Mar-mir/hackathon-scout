@@ -94,7 +94,7 @@ $("#parseBtn").onclick=()=>{
   if(!md.trim()){$("#parseInfo").textContent="Paste markdown first.";return;}
   const out=ScoutParser.parseMarkdown(md,{defaultYear:2026});
   EVENTS=out.events;
-  $("#parseInfo").textContent=`✓ Parsed ${out.count} events`+(out.reportDate?` · report: ${out.reportDate}`:"")+`. Check dates & prizes, edit inline, then download.`;
+  $("#parseInfo").textContent=`✓ Parsed ${out.count} events`+(out.duplicatesRemoved?` (${out.duplicatesRemoved} duplicate${out.duplicatesRemoved>1?"s":""} merged/removed)`:"")+(out.reportDate?` · report: ${out.reportDate}`:"")+`. Check dates & prizes, edit inline, then publish.`;
   render();
 };
 $("#sampleBtn").onclick=async()=>{
