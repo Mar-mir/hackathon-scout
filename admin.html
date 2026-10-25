@@ -49,12 +49,14 @@ pre#json{background:#0d1122;border:1px solid var(--line);border-radius:12px;padd
 <div class="panel"><h2>② REVIEW &amp; EDIT (<span id="evN">0</span>)</h2>
 <div id="evList"><p class="hint">Parsed events appear here as editable cards.</p></div>
 <div class="btnrow">
-<button class="btn" id="dlBtn">⬇ Download events.json</button>
+<button class="btn" id="pubBtn">🚀 Publish live to site</button>
+<button class="btn ghost" id="dlBtn">⬇ Download events.json</button>
 <button class="btn ghost" id="copyBtn">Copy JSON</button>
 <button class="btn ghost" id="saveBtn">💾 Save to browser</button>
 </div>
 <pre id="json">[]</pre>
-<p class="hint">Production: protect this page with <code>Cloudflare Access</code>, POST the JSON to <code>/api/events</code> (Worker → D1/KV). Cron Trigger refreshes weekly/daily. See <code>README-DEPLOY.md</code>.</p>
+<p class="hint" id="pubInfo">Publishing sends the JSON above straight to the live board (no download/upload needed). You're already logged in as admin.</p>
+<p class="hint">Manual route: download the JSON and POST it to <code>/api/events</code>. Cron Trigger refreshes weekly/daily. See <code>README-DEPLOY.md</code>.</p>
 </div>
 </div>
 <footer class="foot"><p><a href="./">← Back to board</a></p></footer>
@@ -102,6 +104,17 @@ $("#sampleBtn").onclick=async()=>{
 $("#dlBtn").onclick=()=>{
   const blob=new Blob([JSON.stringify(EVENTS,null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="events.json";a.click();
+};
+$("#pubBtn").onclick=async()=>{
+  if(!EVENTS.length){$("#pubInfo").textContent="Nothing to publish — parse a markdown first.";return;}
+  const btn=$("#pubBtn");btn.textContent="⏳ Publishing…";btn.disabled=true;
+  try{
+    const r=await fetch("api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({events:EVENTS})});
+    if(r.status===401){$("#pubInfo").textContent="⛔ Not authorized — reload the page and enter the admin password, then try again.";}
+    else if(!r.ok){const t=await r.text();$("#pubInfo").textContent="❌ Publish failed ("+r.status+"): "+t.slice(0,200);}
+    else{const j=await r.json();$("#pubInfo").textContent="✅ Live! "+(j.count||EVENTS.length)+" events published — open the board to see them.";}
+  }catch(e){$("#pubInfo").textContent="❌ Network error: "+e.message;}
+  btn.textContent="🚀 Publish live to site";btn.disabled=false;
 };
 $("#copyBtn").onclick=async()=>{await navigator.clipboard.writeText(JSON.stringify(EVENTS,null,2));$("#copyBtn").textContent="Copied ✓";setTimeout(()=>$("#copyBtn").textContent="Copy JSON",1500);};
 $("#saveBtn").onclick=()=>{localStorage.setItem("scout-events",JSON.stringify(EVENTS));$("#saveBtn").textContent="Saved ✓";setTimeout(()=>$("#saveBtn").textContent="💾 Save to browser",1500);};
