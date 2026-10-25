@@ -44,13 +44,16 @@ export default {
       const stamped = { events, updatedAt: new Date().toISOString() };
       try {
         if (env.DB) {
+          // Full replace: live board matches the published list exactly
+          // (removed events disappear, edited ones update).
+          const stmts = [env.DB.prepare("DELETE FROM events")];
           for (const e of events) {
-            await env.DB.prepare(
+            stmts.push(env.DB.prepare(
               `INSERT INTO events (id,title,organizer,status,type,build_window,start_date,deadline,prize_text,prize_amount,requirements,links)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-               ON CONFLICT(id) DO UPDATE SET title=excluded.title,organizer=excluded.organizer,status=excluded.status,type=excluded.type,build_window=excluded.build_window,start_date=excluded.start_date,deadline=excluded.deadline,prize_text=excluded.prize_text,prize_amount=excluded.prize_amount,requirements=excluded.requirements,links=excluded.links,updated_at=datetime('now')`
-            ).bind(e.id, e.title, e.organizer || "", e.status || "", e.type || "", e.buildWindow || "", e.startDate || null, e.deadline || null, e.prizeText || "Prize TBA", e.prizeAmount ?? null, e.requirements || "", JSON.stringify(e.links || [])).run();
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+            ).bind(e.id, e.title, e.organizer || "", e.status || "", e.type || "", e.buildWindow || "", e.startDate || null, e.deadline || null, e.prizeText || "Prize TBA", e.prizeAmount ?? null, e.requirements || "", JSON.stringify(e.links || [])));
           }
+          await env.DB.batch(stmts);
         }
         if (env.SCOUT_KV) await env.SCOUT_KV.put("events", JSON.stringify(stamped));
         return json({ ok: true, count: events.length });
