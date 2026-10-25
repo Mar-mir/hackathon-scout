@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Smart Markdown Parser · Hackathon Scout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+@media(max-width:900px){.admin-grid{grid-template-columns:1fr}}
+textarea#md{width:100%;min-height:420px;background:#0d1122;color:#e8e4d8;border:1px solid var(--line);border-radius:12px;padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.6}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.panel h2{font-family:var(--mono);font-size:12px;letter-spacing:.15em;color:var(--live);margin:0 0 12px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button.btn{background:var(--live);color:#06281c;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:14px}
+button.ghost{background:transparent;color:var(--paper);border:1px solid var(--line)}
+.ev{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--card2)}
+.ev input,.ev textarea{width:100%;background:#0d1122;border:1px solid var(--line);color:var(--paper);border-radius:8px;padding:8px;margin:4px 0;font-size:13px}
+.ev label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--mut)}
+.ev .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+pre#json{background:#0d1122;border:1px solid var(--line);border-radius:12px;padding:14px;max-height:300px;overflow:auto;font-size:11.5px;color:#9fe8c6}
+.hint{font-size:13px;color:var(--mut);line-height:1.6}
+.hint code{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="grid-bg" aria-hidden="true"></div>
+<header class="topbar"><div class="wrap topbar-in">
+<a class="brand" href="./">◤ HACKATHON<span>SCOUT</span></a>
+<nav class="topnav"><a href="./">Board</a></nav>
+</div></header>
+<main class="wrap">
+<section class="hero" style="padding:36px 0 0">
+<p class="eyebrow">ADMIN · SMART MARKDOWN PARSER</p>
+<h1 style="font-size:clamp(32px,5vw,52px)">Paste markdown.<br>Get <em>clean JSON.</em></h1>
+<p class="lede">Parser auto-extracts title, organizer, status, type, build window, start date, deadline, prize (+ numeric value), requirements, and links. Edit inline, then export.</p>
+</section>
+<div class="admin-grid">
+<div class="panel"><h2>① PASTE SCOUT MARKDOWN</h2>
+<textarea id="md" placeholder="Paste the full scout report markdown here…"></textarea>
+<div class="btnrow">
+<button class="btn" id="parseBtn">⚙ Parse markdown</button>
+<button class="btn ghost" id="sampleBtn">Load sample</button>
+</div>
+<p class="hint" id="parseInfo">Nothing parsed yet.</p>
+</div>
+<div class="panel"><h2>② REVIEW &amp; EDIT (<span id="evN">0</span>)</h2>
+<div id="evList"><p class="hint">Parsed events appear here as editable cards.</p></div>
+<div class="btnrow">
+<button class="btn" id="dlBtn">⬇ Download events.json</button>
+<button class="btn ghost" id="copyBtn">Copy JSON</button>
+<button class="btn ghost" id="saveBtn">💾 Save to browser</button>
+</div>
+<pre id="json">[]</pre>
+<p class="hint">Production: protect this page with <code>Cloudflare Access</code>, POST the JSON to <code>/api/events</code> (Worker → D1/KV). Cron Trigger refreshes weekly/daily. See <code>README-DEPLOY.md</code>.</p>
+</div>
+</div>
+<footer class="foot"><p><a href="./">← Back to board</a></p></footer>
+</main>
+<script src="assets/js/parser.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let EVENTS=[];
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function render(){
+  $("#evN").textContent=EVENTS.length;
+  $("#evList").innerHTML=EVENTS.map((e,i)=>`<div class="ev" data-i="${i}">
+    <label>TITLE</label><input data-k="title" value="${esc(e.title)}">
+    <div class="row2"><div><label>ORGANIZER</label><input data-k="organizer" value="${esc(e.organizer)}"></div>
+    <div><label>STATUS</label><input data-k="status" value="${esc(e.status)}"></div></div>
+    <div class="row2"><div><label>TYPE</label><input data-k="type" value="${esc(e.type)}"></div>
+    <div><label>BUILD WINDOW</label><input data-k="buildWindow" value="${esc(e.buildWindow)}"></div></div>
+    <div class="row2"><div><label>DEADLINE (YYYY-MM-DD)</label><input data-k="deadline" value="${esc(e.deadline||"")}"> </div>
+    <div><label>PRIZE TEXT</label><input data-k="prizeText" value="${esc(e.prizeText)}"></div></div>
+    <div class="row2"><div><label>PRIZE NUMERIC ($)</label><input data-k="prizeAmount" type="number" value="${e.prizeAmount==null?"":e.prizeAmount}"></div>
+    <div><label>LINK (first, url)</label><input data-k="link0" value="${esc((e.links[0]||{}).url||"")}"></div></div>
+    <label>REQUIREMENTS</label><textarea rows="2" data-k="requirements">${esc(e.requirements)}</textarea>
+  </div>`).join("")||'<p class="hint">No events.</p>';
+  $("#json").textContent=JSON.stringify(EVENTS,null,2);
+  document.querySelectorAll(".ev input,.ev textarea").forEach(el=>el.addEventListener("input",()=>{
+    const card=el.closest(".ev"),i=+card.dataset.i,k=el.dataset.k;
+    if(k==="link0"){EVENTS[i].links=[{label:el.value.replace(/^https?:\/\//,"").slice(0,40)||"link",url:el.value}];}
+    else if(k==="prizeAmount"){EVENTS[i].prizeAmount=el.value===""?null:+el.value;}
+    else EVENTS[i][k]=el.value;
+    $("#json").textContent=JSON.stringify(EVENTS,null,2);
+  }));
+}
+$("#parseBtn").onclick=()=>{
+  const md=$("#md").value;
+  if(!md.trim()){$("#parseInfo").textContent="Paste markdown first.";return;}
+  const out=ScoutParser.parseMarkdown(md,{defaultYear:2026});
+  EVENTS=out.events;
+  $("#parseInfo").textContent=`✓ Parsed ${out.count} events`+(out.reportDate?` · report: ${out.reportDate}`:"")+`. Check dates & prizes, edit inline, then download.`;
+  render();
+};
+$("#sampleBtn").onclick=async()=>{
+  try{const r=await fetch("data/sample-report.md");$("#md").value=await r.text();$("#parseInfo").textContent="Sample loaded — hit Parse.";}
+  catch(e){$("#parseInfo").textContent="Sample file missing.";}
+};
+$("#dlBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(EVENTS,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="events.json";a.click();
+};
+$("#copyBtn").onclick=async()=>{await navigator.clipboard.writeText(JSON.stringify(EVENTS,null,2));$("#copyBtn").textContent="Copied ✓";setTimeout(()=>$("#copyBtn").textContent="Copy JSON",1500);};
+$("#saveBtn").onclick=()=>{localStorage.setItem("scout-events",JSON.stringify(EVENTS));$("#saveBtn").textContent="Saved ✓";setTimeout(()=>$("#saveBtn").textContent="💾 Save to browser",1500);};
+(function(){try{const s=localStorage.getItem("scout-events");if(s){EVENTS=JSON.parse(s);render();}}catch(e){}})();
+</script>
+</body>
+</html>

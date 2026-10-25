@@ -1,0 +1,23 @@
+name = "hackathon-scout"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# Static frontend deploys on Pages (this repo root). Worker serves /api/*.
+# If serving Pages + Worker separately, set Pages project to this folder
+# and add a route for /api/* to this Worker.
+
+[[kv_namespaces]]
+binding = "SCOUT_KV"
+id = "52d987b26c9a4ddca498f76951af48a6"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hackathon-scout"
+database_id = "6d9a2de3-7583-4532-a390-a7b6c594df71"
+
+[triggers]
+crons = ["0 6 * * *"]  # daily 06:00 UTC refresh; use "0 6 * * 1" for weekly Mondays
+
+[assets]
+directory = "./public"
+binding = "ASSETS"

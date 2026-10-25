@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hackathon Scout — AI / Agents / Payments / Web3</title>
+<meta name="description" content="Curated hackathons for AI agent builders. Upcoming first, expired stamped.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="grid-bg" aria-hidden="true"></div>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="./">◤ HACKATHON<span>SCOUT</span></a>
+    <nav class="topnav">
+      <a href="./">Board</a>
+      <a href="admin.html" class="admin-link">Admin → Parser</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="eyebrow">AI · AGENTS · PAYMENTS · WEB3 — UPDATED <span id="reportDate">Oct 16, 2026</span></p>
+    <h1>Every hackathon worth<br>your <em>weekend.</em></h1>
+    <p class="lede">Upcoming stays on top. Expired sinks to the bottom, stamped. No noise, no dead links.</p>
+    <div class="hero-strip">
+      <div class="nextup">
+        <span class="k">NEXT DEADLINE</span>
+        <strong id="nextTitle">—</strong>
+        <span class="count" id="nextCount">—</span>
+      </div>
+      <div class="stats">
+        <div><b id="statLive">0</b><span>LIVE</span></div>
+        <div><b id="statPrize">$0</b><span>COMBINED</span></div>
+        <div><b id="statExpired">0</b><span>EXPIRED</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-f="all">All</button>
+      <button class="tab" data-f="live">Upcoming</button>
+      <button class="tab" data-f="expired">Expired</button>
+    </div>
+    <div class="searchrow">
+      <input id="q" type="search" placeholder="Search title, organizer, requirement…">
+      <select id="sort">
+        <option value="deadline">Sort: deadline ↓</option>
+        <option value="prize">Sort: prize ↓</option>
+      </select>
+    </div>
+  </section>
+
+  <section id="liveSec">
+    <h2 class="sech">● UPCOMING <span id="liveN"></span></h2>
+    <div id="liveGrid" class="grid"></div>
+  </section>
+
+  <section id="expSec">
+    <h2 class="sech dim">○ EXPIRED / CLOSED <span id="expN"></span></h2>
+    <div id="expGrid" class="grid expired"></div>
+  </section>
+
+  <footer class="foot">
+    <p>Built for builders. Data: <code>data/events.json</code> → Cloudflare D1 / KV in production. Admin parses a scout markdown → clean JSON.</p>
+    <p><a href="admin.html">Open admin parser →</a></p>
+  </footer>
+</main>
+<script src="assets/js/parser.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
